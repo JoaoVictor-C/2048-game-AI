@@ -1,43 +1,52 @@
-import tkinter as tk
 import numpy as np
-import kivy as kv
+from kivy.app import App
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.core.window import Window
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
+from kivy.graphics import Color, Rectangle
+from kivy.uix.widget import Widget
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.screenmanager import ScreenManager, Screen
+
 import timeit
 
 
 backgroundColor = {
-    2: '#eee4da',
-    4: '#ede0c8',
-    8: '#f2b179',
-    16: '#f59563',
-    32: '#f59563',
-    64: '#f65e3b',
-    128: '#edcf72',
-    256: '#edcc61',
-    512: '#edc850',
-    1024: '#edc53f',
-    2048: '#edc22e',
-    4096: '#b8850a',
-    8192: '#af7505',
-
+    '2': (238, 228, 218),
+    '4': (237, 224, 200),
+    '8': (242, 177, 121),
+    '16': (245, 149, 99),
+    '32': (245, 149, 99),
+    '64': (246, 94, 59),
+    '128': (237, 207, 114),
+    '256': (237, 204, 97),
+    '512': (237, 200, 80),
+    '1024': (237, 197, 63),
+    '2048': (237, 194, 46),
+    '4096': (184, 133, 10),
+    '8192': (175, 117, 5),
 }
 
 tileColor = {
-    2: '#776e65',
-    4: '#776e65',
-    8: '#f9f6f2',
-    16: '#f9f6f2',
-    32: '#f9f6f2',
-    64: '#f9f6f2',
-    128: '#f9f6f2',
-    256: '#f9f6f2',
-    512: '#f9f6f2',
-    1024: '#f9f6f2',
-    2048: '#f9f6f2',
-    4096: '#f9f6f2',
-    8192: '#f9f6f2',
+    '2': (119, 110, 101),
+    '4': (119, 110, 101),
+    '8': (249, 246, 242),
+    '16': (249, 246, 242),
+    '32': (249, 246, 242),
+    '64': (249, 246, 242),
+    '128': (249, 246, 242),
+    '256': (249, 246, 242),
+    '512': (249, 246, 242),
+    '1024': (249, 246, 242),
+    '2048': (249, 246, 242),
+    '4096': (249, 246, 242),
+    '8192': (249, 246, 242),
 }
 
-background = '#bbada0'
+backgroundC = (187, 173, 160)
+
 
 def add_random_num(matrix):
     zero_list = []
@@ -210,56 +219,42 @@ def is_game_over(matrix):
                 return False
     return True
 
-class Game2048(tk.Frame):
-    def __init__(self, master=tk.Tk()):
-        super().__init__(master)
-        self.matrix = None
-        self.master = master
-        self.master.title('2048')
-        self.master.geometry('500x500')
-        self.master.resizable(0, 0)
-        self.master.bind('<Key>', self.move)
-        self.score = 0
-        self.pack()
-        self.init_game()
 
-    def init_game(self):
-        self.score = 0
-        self.matrix = np.zeros((4, 4), dtype=np.int32)
+class Game2048(App):
+    def __init__(self):
+        super().__init__()
+        self.initGame()
+
+    def initGame(self):
+        self.matrix = np.zeros((4, 4), dtype=int)
         self.matrix = add_random_num(self.matrix)
         self.matrix = add_random_num(self.matrix)
-        self.draw_matrix(self.matrix)
-        self.draw_score()
-        self.master.update()
+        self.score = 0
 
-    def move(self, event):
-        moves = {0: move_up, 1: move_down, 2: move_left, 3: move_right,
-                 'Up': move_up, 'Down': move_down, 'Left': move_left, 'Right': move_right}
-        if event in moves:
-            moves[event](self.matrix)
+    def move(self, index_move):
+        moves = {0: move_up, 1: move_down, 2: move_left, 3: move_right}
+        if index_move in moves:
+            self.matrix = moves[index_move](self.matrix)
+        self.matrix = add_random_num(self.matrix)
         self.score = get_score(self.matrix)
-        self.matrix = add_random_num(self.matrix)
-        self.draw_matrix(self.matrix)
-        self.draw_score()
-        if is_game_over(self.matrix):
-            self.init_game()
-        self.master.update()
+        self.draw()
 
-    def draw_matrix(self, matrix):
-        for widget in self.winfo_children():
-            widget.destroy()
-        for i in range(4):
-            for j in range(4):
-                tk.Label(self, text=str(matrix[i][j]) if matrix[i][j] != 0 else '', font=('Arial', 20), width=4, height=2,
-                         bg=backgroundColor[matrix[i][j]] if matrix[i][j] != 0 else '#cdc1b4',
-                         fg=tileColor[matrix[i][j]] if matrix[i][j] != 0 else '#f9f6f2').grid(row=i, column=j, padx=5, pady=5)
+    def draw(self):
+        self.root.clear_widgets()
+        self.root.add_widget(self.Background())
+        self.root.add_widget(self.Score(score=self.score))
+        self.root.add_widgetself.Board(matrix=self.matrix))
 
-    def draw_score(self):
-        tk.Label(self, text='Score: ' + str(self.score), font=('Arial', 20)).grid(row=4, column=0, columnspan=4)
+    def build(self):
+        self.root = FloatLayout()
+        self.draw()
+        return self.root
 
-
-
-# Iremos refazer a classe Game2048 porém agora usando a biblioteca Kivy
+    class Background(Widget):
+        def __init__(self):
+            super().__init__()
+            self.canvas.add(Color(backgroundColor['2'][0] / 255, backgroundColor['2'][1] / 255, backgroundColor['2'][2] / 255))
+            self.canvas.add(Rectangle(pos=(0, 0), size=(Window.width, Window.height)))
 
 
 class RandomGame2048:
