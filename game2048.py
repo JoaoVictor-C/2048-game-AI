@@ -1,51 +1,41 @@
 import numpy as np
-from kivy.app import App
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.core.window import Window
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.button import Button
-from kivy.graphics import Color, Rectangle
-from kivy.uix.widget import Widget
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.screenmanager import ScreenManager, Screen
-
+import tkinter as tk
 import timeit
 
-
 backgroundColor = {
-    '2': (238, 228, 218),
-    '4': (237, 224, 200),
-    '8': (242, 177, 121),
-    '16': (245, 149, 99),
-    '32': (245, 149, 99),
-    '64': (246, 94, 59),
-    '128': (237, 207, 114),
-    '256': (237, 204, 97),
-    '512': (237, 200, 80),
-    '1024': (237, 197, 63),
-    '2048': (237, 194, 46),
-    '4096': (184, 133, 10),
-    '8192': (175, 117, 5),
+    2: '#eee4da',
+    4: '#ede0c8',
+    8: '#f2b179',
+    16: '#f59563',
+    32: '#f59563',
+    64: '#f65e3b',
+    128: '#edcf72',
+    256: '#edcc61',
+    512: '#edc850',
+    1024: '#edc53f',
+    2048: '#edc22e',
+    4096: '#b8850a',
+    8192: '#af7505',
+
 }
 
 tileColor = {
-    '2': (119, 110, 101),
-    '4': (119, 110, 101),
-    '8': (249, 246, 242),
-    '16': (249, 246, 242),
-    '32': (249, 246, 242),
-    '64': (249, 246, 242),
-    '128': (249, 246, 242),
-    '256': (249, 246, 242),
-    '512': (249, 246, 242),
-    '1024': (249, 246, 242),
-    '2048': (249, 246, 242),
-    '4096': (249, 246, 242),
-    '8192': (249, 246, 242),
+    2: '#776e65',
+    4: '#776e65',
+    8: '#f9f6f2',
+    16: '#f9f6f2',
+    32: '#f9f6f2',
+    64: '#f9f6f2',
+    128: '#f9f6f2',
+    256: '#f9f6f2',
+    512: '#f9f6f2',
+    1024: '#f9f6f2',
+    2048: '#f9f6f2',
+    4096: '#f9f6f2',
+    8192: '#f9f6f2',
 }
 
-backgroundC = (187, 173, 160)
+backgroundC = '#bbada0'
 
 
 def add_random_num(matrix):
@@ -60,6 +50,7 @@ def add_random_num(matrix):
     i, j = zero_list[index]
     matrix[i][j] = 2 if np.random.random() < 0.9 else 4
     return matrix
+
 
 def move_up(matrix):
     for j in range(4):
@@ -95,6 +86,7 @@ def move_up(matrix):
             i += 1
     return matrix
 
+
 def move_down(matrix):
     for j in range(4):
         i = 3
@@ -128,6 +120,7 @@ def move_down(matrix):
                 continue
             i -= 1
     return matrix
+
 
 def move_left(matrix):
     for i in range(4):
@@ -163,6 +156,7 @@ def move_left(matrix):
             j += 1
     return matrix
 
+
 def move_right(matrix):
     for i in range(4):
         j = 3
@@ -197,12 +191,14 @@ def move_right(matrix):
             j -= 1
     return matrix
 
+
 def get_score(matrix):
     score = 0
     for i in range(4):
         for j in range(4):
             score += matrix[i][j]
     return score
+
 
 def is_game_over(matrix):
     for i in range(4):
@@ -220,41 +216,78 @@ def is_game_over(matrix):
     return True
 
 
-class Game2048(App):
-    def __init__(self):
-        super().__init__()
-        self.initGame()
-
-    def initGame(self):
-        self.matrix = np.zeros((4, 4), dtype=int)
-        self.matrix = add_random_num(self.matrix)
-        self.matrix = add_random_num(self.matrix)
+class Game2048(tk.Frame):
+    def __init__(self, master=tk.Tk()):
+        super().__init__(master)
+        self.matrix = None
+        self.master = master
+        self.master.title('2048')
+        self.master.rowconfigure(1)
+        self.master.columnconfigure(1)
+        self.gameArea = tk.Frame(self.master, bg=backgroundC, padx=7, pady=7)
+        self.gameArea.grid(row=1, column=1)
+        self.master.bind('<Escape>', lambda e: self.master.destroy())
+        self.master.geometry("{0}x{1}+0+0".format(self.master.winfo_screenwidth(), self.master.winfo_screenheight()-75))
+        self.master.resizable(False, False)
+        self.master.update_idletasks()
+        self.master.update()
+        self.master.bind('<Key>', self.move)
         self.score = 0
+        self.init_game()
 
-    def move(self, index_move):
-        moves = {0: move_up, 1: move_down, 2: move_left, 3: move_right}
-        if index_move in moves:
-            self.matrix = moves[index_move](self.matrix)
+    def init_game(self):
+        self.score = 0
+        self.matrix = np.zeros((4, 4), dtype=np.int32)
         self.matrix = add_random_num(self.matrix)
+        self.matrix = add_random_num(self.matrix)
+        self.draw_matrix(self.matrix)
+        self.draw_score()
+        self.master.update()
+
+    def move(self, event):
+        moves = {0: move_up, 1: move_down, 2: move_left, 3: move_right,
+                 'Up': move_up, 'Down': move_down, 'Left': move_left, 'Right': move_right}
+        if event in moves:
+            moves[event](self.matrix)
         self.score = get_score(self.matrix)
-        self.draw()
+        self.matrix = add_random_num(self.matrix)
+        self.draw_matrix(self.matrix)
+        self.draw_score()
+        if is_game_over(self.matrix):
+            input()
+        self.master.update()
 
-    def draw(self):
-        self.root.clear_widgets()
-        self.root.add_widget(self.Background())
-        self.root.add_widget(self.Score(score=self.score))
-        self.root.add_widgetself.Board(matrix=self.matrix))
+    def draw_matrix(self, matrix):
+        for widget in self.gameArea.winfo_children():
+            widget.destroy()
+        for i in range(4):
+            for j in range(4):
+                tile = tk.Label(self.gameArea, text=str(matrix[i][j]) if matrix[i][j] != 0 else '',
+                                font=('Clear Sans', 40, 'bold'),
+                                width=4, height=2, bg=backgroundColor[matrix[i][j]] if matrix[i][j] != 0 else '#cdc1b4',
+                                fg=tileColor[matrix[i][j]] if matrix[i][j] != 0 else '#776e65')
+                tile.grid(row=i, column=j, padx=7, pady=7)
 
-    def build(self):
-        self.root = FloatLayout()
-        self.draw()
-        return self.root
+    def draw_score(self):
+        tk.Label(self.master, text='Score: ' + str(self.score), font=('Clear Sans', 25, 'bold')).grid(row=0, column=1)
 
-    class Background(Widget):
-        def __init__(self):
-            super().__init__()
-            self.canvas.add(Color(backgroundColor['2'][0] / 255, backgroundColor['2'][1] / 255, backgroundColor['2'][2] / 255))
-            self.canvas.add(Rectangle(pos=(0, 0), size=(Window.width, Window.height)))
+    def draw_status(self, iterations, best_move, total_moves):
+        for widget in self.master.winfo_children():
+            if widget != self.gameArea and widget != self.master.winfo_children()[1] and widget != self.master.winfo_children()[2]:
+                widget.destroy()
+        move = {0: 'Cima', 1: 'Baixo', 2: 'Esquerda', 3: 'Direita'}
+        move = move[best_move]
+        tk.Label(self.master, text='Simulações: ' + str(iterations), font=('Clear Sans', 25, 'bold')).grid(row=0, column=0)
+        tk.Label(self.master, text='Último movimento: ' + str(move), font=('Clear Sans', 25, 'bold'), width=23).grid(row=2, column=0)
+        tk.Label(self.master, text='Movimentos: ' + str(total_moves), font=('Clear Sans', 25, 'bold')).grid(row=2, column=2)
+
+    def draw_time_and_maxIteration(self, time, iterations):
+        for widget in self.master.winfo_children():
+            if widget != self.gameArea:
+                widget.destroy()
+        tk.Label(self.master, text='Tempo: ' + str(np.round(time, 3)), font=('Clear Sans', 25, 'bold'), width=17).grid(row=0, column=2)
+        tk.Label(self.master, text='Máximo de simulações: ' + str(iterations), font=('Clear Sans', 25, 'bold')).grid(row=2, column=1)
+
 
 
 class RandomGame2048:
@@ -300,12 +333,12 @@ class MCTS:
         moves_iterations = {0: iteration, 1: iteration, 2: iteration, 3: iteration}
 
         allMoves = []
-
         for move, iteration in moves_iterations.items():
             for i in range(iteration):
                 game = RandomGame2048(matrix.copy())
                 score, first_move = game.random_game(move)
                 allMoves.append({first_move: score})
+
         bestMove = -1
         bestScore = -1
         # agrupa os scores de cada movimento e tira a média
@@ -318,6 +351,7 @@ class MCTS:
             if score > bestScore:
                 bestScore = score
                 bestMove = move
+        self.game.draw_status(iterations, bestMove, self.totalMoves)
         return bestMove
 
     def play(self):
@@ -328,19 +362,14 @@ class MCTS:
             move = self.get_move(matrix, iterations)
             self.game.move(move)
             self.totalMoves += 1
-            # Se não existir o txt com o melhor total de movimentos, cria um
-
             with open('bestTotalMoves.txt', 'r') as f:
-                if f.read() == '':
-                    with open('bestTotalMoves.txt', 'w') as f:
-                        f.write(str(self.totalMoves))
                 bestTotalMoves = int(f.read())
             if self.totalMoves > bestTotalMoves:
                 with open('bestTotalMoves.txt', 'w') as f:
                     f.write(str(self.totalMoves))
 
             if is_game_over(self.game.matrix):
-                running = False
+                input()
 
         print('Game Over')
         print('Score: ', self.game.score)
@@ -363,21 +392,13 @@ class MCTS:
             iterations = self.max_iter // 2
         else:
             iterations = self.max_iter
-        print('Total Moves: ', self.totalMoves)
-        print('Iterations: ', iterations)
         if self.totalMoves % 10 == 0:
-            if self.LastIterations == 0:
-                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
-            else:
-                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), self.LastIterations))
-            print('Time: ', timer.timeit(1))
+            timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
+            self.game.draw_time_and_maxIteration(timer.timeit(1), self.max_iter)
             if timer.timeit(1) > self.temperature:
                 self.max_iter = self.max_iter // 2
-                print('Max Iterations: ', self.max_iter)
             else:
                 self.max_iter = self.original_max_iter
-                print('Max Iterations: ', self.max_iter)
-        self.LastIterations = iterations
         return iterations
 
 
