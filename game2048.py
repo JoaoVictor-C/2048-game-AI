@@ -227,7 +227,6 @@ class Game2048(tk.Frame):
         self.gameArea = tk.Frame(self.master, bg=backgroundC, padx=7, pady=7)
         self.gameArea.grid(row=1, column=1)
         self.master.bind('<Escape>', lambda e: self.master.destroy())
-        self.master.geometry("{0}x{1}+0+0".format(self.master.winfo_screenwidth(), self.master.winfo_screenheight()-75))
         self.master.resizable(False, False)
         self.master.update_idletasks()
         self.master.update()
@@ -253,8 +252,6 @@ class Game2048(tk.Frame):
         self.matrix = add_random_num(self.matrix)
         self.draw_matrix(self.matrix)
         self.draw_score()
-        if is_game_over(self.matrix):
-            input()
         self.master.update()
 
     def draw_matrix(self, matrix):
@@ -320,13 +317,13 @@ class RandomGame2048:
 
 
 class MCTS:
-    def __init__(self, game, max_iter=1000, temperature=0.75):
+    def __init__(self, game, max_iter=2000, temperature=0.80):
         self.game = game
         self.max_iter = max_iter
         self.totalMoves = 0
         self.original_max_iter = max_iter
         self.temperature = temperature
-        self.LastIterations = 0
+        self.LastIterations = -1
 
     def get_move(self, matrix, iterations):
         iteration = iterations // 4
@@ -391,14 +388,20 @@ class MCTS:
         elif self.totalMoves <= 0.9 * bestTotalMoves:
             iterations = self.max_iter // 2
         else:
-            iterations = self.max_iter
+            iterations = self.max_iter * 2
+        self.LastIterations = iterations
         if self.totalMoves % 10 == 0:
-            timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
+            if self.LastIterations == -1:
+                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
+            else:
+                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), self.LastIterations))
             self.game.draw_time_and_maxIteration(timer.timeit(1), self.max_iter)
             if timer.timeit(1) > self.temperature:
                 self.max_iter = self.max_iter // 2
             else:
                 self.max_iter = self.original_max_iter
+        print(iterations)
+        print(self.LastIterations)
         return iterations
 
 
