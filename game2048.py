@@ -227,6 +227,7 @@ class Game2048(tk.Frame):
         self.gameArea = tk.Frame(self.master, bg=backgroundC, padx=7, pady=7)
         self.gameArea.grid(row=1, column=1)
         self.master.bind('<Escape>', lambda e: self.master.destroy())
+        self.master.geometry("{0}x{1}+0+0".format(self.master.winfo_screenwidth(), self.master.winfo_screenheight()-75))
         self.master.resizable(False, False)
         self.master.update_idletasks()
         self.master.update()
@@ -252,6 +253,8 @@ class Game2048(tk.Frame):
         self.matrix = add_random_num(self.matrix)
         self.draw_matrix(self.matrix)
         self.draw_score()
+        if is_game_over(self.matrix):
+            input()
         self.master.update()
 
     def draw_matrix(self, matrix):
@@ -278,12 +281,12 @@ class Game2048(tk.Frame):
         tk.Label(self.master, text='Último movimento: ' + str(move), font=('Clear Sans', 25, 'bold'), width=23).grid(row=2, column=0)
         tk.Label(self.master, text='Movimentos: ' + str(total_moves), font=('Clear Sans', 25, 'bold')).grid(row=2, column=2)
 
-    def draw_time_and_maxIteration(self, time, iterations):
+    def draw_time(self, time, meanTime):
         for widget in self.master.winfo_children():
             if widget != self.gameArea:
                 widget.destroy()
-        tk.Label(self.master, text='Tempo: ' + str(np.round(time, 3)), font=('Clear Sans', 25, 'bold'), width=17).grid(row=0, column=2)
-        tk.Label(self.master, text='Máximo de simulações: ' + str(iterations), font=('Clear Sans', 25, 'bold')).grid(row=2, column=1)
+        tk.Label(self.master, text='Tempo: ' + str(np.round(time, 3)) + 's', font=('Clear Sans', 25, 'bold'), width=17).grid(row=0, column=2)
+        tk.Label(self.master, text='Tempo médio: ' + str(np.round(meanTime, 3)) + 's', font=('Clear Sans', 25, 'bold')).grid(row=2, column=1)
 
 
 
@@ -309,21 +312,24 @@ class RandomGame2048:
         add_random_num(self.matrix)
         return self.matrix
 
-    def random_game(self, index_move=None):
-        while not is_game_over(self.matrix):
+    def random_game(self, index_move=None, depth=50):
+        for i in range(depth):
             self.matrix = self.random_move(index_move)
             self.score = get_score(self.matrix)
+            if is_game_over(self.matrix):
+                break
         return self.score, self.first_move
 
 
 class MCTS:
-    def __init__(self, game, max_iter=2000, temperature=0.80):
+    def __init__(self, game, max_iter=1000, temperature=0.75):
         self.game = game
         self.max_iter = max_iter
         self.totalMoves = 0
         self.original_max_iter = max_iter
         self.temperature = temperature
-        self.LastIterations = -1
+        self.LastIterations = 0
+        self.meanTime = []
 
     def get_move(self, matrix, iterations):
         iteration = iterations // 4
@@ -338,7 +344,7 @@ class MCTS:
 
         bestMove = -1
         bestScore = -1
-        # agrupa os scores de cada movimento e tira a média
+
         for move in range(4):
             score = 0
             for i in range(len(allMoves)):
@@ -359,12 +365,6 @@ class MCTS:
             move = self.get_move(matrix, iterations)
             self.game.move(move)
             self.totalMoves += 1
-            with open('bestTotalMoves.txt', 'r') as f:
-                bestTotalMoves = int(f.read())
-            if self.totalMoves > bestTotalMoves:
-                with open('bestTotalMoves.txt', 'w') as f:
-                    f.write(str(self.totalMoves))
-
             if is_game_over(self.game.matrix):
                 input()
 
@@ -376,32 +376,23 @@ class MCTS:
         with open('bestTotalMoves.txt', 'r') as f:
             bestTotalMoves = int(f.read())
         if self.totalMoves <= 0.01 * bestTotalMoves:
-            iterations = self.max_iter // 100
-        elif self.totalMoves <= 0.1 * bestTotalMoves:
             iterations = self.max_iter // 50
-        elif self.totalMoves <= 0.25 * bestTotalMoves:
+        elif self.totalMoves <= 0.1 * bestTotalMoves:
             iterations = self.max_iter // 25
-        elif self.totalMoves <= 0.5 * bestTotalMoves:
+        elif self.totalMoves <= 0.25 * bestTotalMoves:
             iterations = self.max_iter // 10
-        elif self.totalMoves <= 0.75 * bestTotalMoves:
+        elif self.totalMoves <= 0.5 * bestTotalMoves:
             iterations = self.max_iter // 5
+        elif self.totalMoves <= 0.75 * bestTotalMoves:
+            iterations = self.max_iter // 3
         elif self.totalMoves <= 0.9 * bestTotalMoves:
             iterations = self.max_iter // 2
         else:
-            iterations = self.max_iter * 2
-        self.LastIterations = iterations
-        if self.totalMoves % 10 == 0:
-            if self.LastIterations == -1:
-                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
-            else:
-                timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), self.LastIterations))
-            self.game.draw_time_and_maxIteration(timer.timeit(1), self.max_iter)
-            if timer.timeit(1) > self.temperature:
-                self.max_iter = self.max_iter // 2
-            else:
-                self.max_iter = self.original_max_iter
-        print(iterations)
-        print(self.LastIterations)
+            iterations = self.max_iter
+        timer = timeit.Timer(lambda: self.get_move(self.game.matrix.copy(), iterations))
+        self.meanTime.append(timer.timeit(1))
+        meanTime = np.array(self.meanTime).mean()
+        self.game.draw_time(timer.timeit(1), meanTime)
         return iterations
 
 
