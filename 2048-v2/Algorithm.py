@@ -1,4 +1,3 @@
-import numpy as np
 import tkinter as tk
 import numba as nb
 
@@ -39,7 +38,7 @@ tileColor = {
 
 backgroundC = '#bbada0'
 
-gridSize = 5
+gridSize = 4
 
 class Game2048(tk.Frame):
     def __init__(self, master=tk.Tk()):
@@ -47,6 +46,8 @@ class Game2048(tk.Frame):
         self.matrix = None
         self.master = master
         self.master.title('2048')
+        self.master.geometry('478x506')
+        self.master.focus_set()
         self.master.rowconfigure(1)
         self.master.columnconfigure(1)
         self.gameArea = tk.Frame(self.master, bg=backgroundC, padx=7, pady=7)
@@ -84,7 +85,7 @@ class Game2048(tk.Frame):
             widget.destroy()
         for i in range(gridSize):
             for j in range(gridSize):
-                responsiveTextSize = 160 // gridSize
+                responsiveTextSize = 120 // gridSize
                 tile = tk.Label(self.gameArea, text=str(np.power(2, matrix[i][j])) if matrix[i][j] != 0 else '',
                                 font=('Clear Sans', responsiveTextSize, 'bold'),
                                 width=4, height=2, bg=backgroundColor[matrix[i][j]] if matrix[i][j] != 0 else '#cdc1b4',
@@ -92,7 +93,7 @@ class Game2048(tk.Frame):
                 tile.grid(row=i, column=j, padx=7, pady=7)
 
     def draw_score(self):
-        tk.Label(self.master, text='Score: ' + str(self.score), font=('Clear Sans', 25, 'bold')).grid(row=0, column=1)
+        tk.Label(self.master, text='Score: ' + str(self.score), font=('Clear Sans', 25, 'bold'), width=24).grid(row=0, column=1)
 
     def draw_status(self, iterations, best_move, total_moves, depth):
         for widget in self.master.winfo_children():
@@ -100,23 +101,50 @@ class Game2048(tk.Frame):
                 widget.destroy()
         move = {0: 'Cima', 1: 'Baixo', 2: 'Esquerda', 3: 'Direita'}
         move = move[best_move]
-        tk.Label(self.master, text='Simulações: ' + str(iterations), font=('Clear Sans', 25, 'bold')).grid(row=0, column=0)
+        tk.Label(self.master, text='Simulações: ' + str(iterations), font=('Clear Sans', 25, 'bold'), width=15).grid(row=0, column=0)
         tk.Label(self.master, text='Último movimento: ' + str(move), font=('Clear Sans', 25, 'bold'), width=23).grid(row=2, column=0)
-        tk.Label(self.master, text='Movimentos: ' + str(total_moves), font=('Clear Sans', 25, 'bold')).grid(row=2, column=2)
-        tk.Label(self.master, text='Profundidade: ' + str(depth), font=('Clear Sans', 25, 'bold')).grid(row=0, column=2)
+        tk.Label(self.master, text='Movimentos: ' + str(total_moves), font=('Clear Sans', 25, 'bold'), width=15).grid(row=2, column=2)
+        tk.Label(self.master, text='Profundidade: ' + str(depth), font=('Clear Sans', 25, 'bold'), width=15).grid(row=0, column=2)
+
+
+class lightGame2048:
+    def __init__(self):
+        self.score = 0
+        self.matrix = np.zeros((gridSize, gridSize), dtype=np.int32)
+        self.matrix = add_random_num(self.matrix)
+        self.matrix = add_random_num(self.matrix)
+
+    def move(self, move):
+        moves = {0: move_up, 1: move_down, 2: move_left, 3: move_right}
+        if move in moves:
+            self.matrix = moves[move](self.matrix)
+        self.score = evaluate(self.matrix)
+
+
+def move(move):
+    match move:
+        case 0:
+            temp_move = move_up
+        case 1:
+            temp_move = move_down
+        case 2:
+            temp_move = move_left
+        case 3:
+            temp_move = move_right
+    return temp_move
 
 @nb.jit(fastmath=True, parallel=True)
 def random_move(matrix, temp_move, first_move):
-    moves = [move_up, move_down, move_left, move_right]
     if temp_move is None:
-        temp_move = moves[first_move]
+        temp_move = move(first_move)
     else:
-        temp_move = moves[np.random.randint(0, 4)]
+        value = np.random.randint(0, 4)
+        temp_move = move(value)
     matrix = temp_move(matrix)
     return matrix, first_move, temp_move
 
 @nb.jit(fastmath=True, parallel=True)
-def random_game(matrix, first_move, depth=150):
+def random_game(matrix, first_move, depth):
     temp_move=None
     for i in range(depth):
         matrix, first_move, temp_move = random_move(matrix.copy(), temp_move, first_move)
@@ -124,7 +152,6 @@ def random_game(matrix, first_move, depth=150):
             break
     score = evaluate(matrix)
     return score, first_move
-
 
 
 class MCTS:
@@ -182,7 +209,6 @@ class MCTS:
             if score > bestScore:
                 bestScore = score
                 bestMove = move
-        self.game.draw_status(iterations, bestMove, self.totalMoves, depth)
         return bestMove
 
     def play(self):
@@ -198,7 +224,9 @@ class MCTS:
                 break
 
         print('Game Over')
-        print('Score: ', self.game.score)
+        print(self.game.matrix)
+        with open('results.csv', 'a') as f:
+            f.write(f'{self.game.score},{self.totalMoves},{2**max_tile(self.game.matrix)}\n')
 
     def get_best_maxIterations(self):
         iterations = 0
@@ -233,9 +261,9 @@ class MCTS:
 
 
 if __name__ == '__main__':
-    game = Game2048()
-    mcts = MCTS(game)
-    mcts.play()
-    while True:
-        game.master.update_idletasks()
-        game.master.update()
+    for i in range(100):
+        #game = Game2048()
+        game = lightGame2048()
+        mcts = MCTS(game)
+        mcts.play()
+        print(i)

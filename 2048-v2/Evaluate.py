@@ -1,7 +1,7 @@
 from numba import njit
 import numpy as np
 
-gridSize = 5
+gridSize = 4
 
 @njit(fastmath=True)
 def evaluate(matrix):
@@ -13,13 +13,12 @@ def evaluate(matrix):
 def getDistinct(matrix):
     return np.unique(matrix).size
 
+
 @njit(fastmath=True)
 def evaluate_neighbors(matrix):
     non_zero_horizontal_neighbors = np.sum((matrix[:, :-1] != 0) & (matrix[:, :-1] == matrix[:, 1:]))
     non_zero_vertical_neighbors = np.sum((matrix[:-1, :] != 0) & (matrix[:-1, :] == matrix[1:, :]))
     return non_zero_horizontal_neighbors + non_zero_vertical_neighbors
-
-
 
 
 @njit(fastmath=True)
@@ -30,6 +29,9 @@ def evaluate_smoothness(matrix):
     return smoothness
 
 
+@njit(fastmath=True)
+def max_tile(matrix):
+    return np.max(matrix)
 
 @njit(fastmath=True)
 def evaluate_empty_cells(matrix):

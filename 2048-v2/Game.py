@@ -1,8 +1,7 @@
 from numba import njit
-import numpy.random as random
 import numpy as np
 
-gridSize = 5
+gridSize = 4
 
 @njit(fastmath=True)
 def add_random_num(matrix):
@@ -18,23 +17,24 @@ def add_random_num(matrix):
     return matrix
 
 
-
+# Essa função pode receber uma matriz e um booleano que indica se a linha ou coluna deve ser revertida.
 @njit(fastmath=True)
 def merge_and_shift(matrix, reverse):
     new_matrix = np.zeros_like(matrix)
 
+    # Para cada linha da matriz
     for i in range(gridSize):
         if not reverse:
-            line = matrix[i, :]
+            line = matrix[i, :]  # Pega a linha
         else:
-            line = matrix[i, ::-1]
+            line = matrix[i, ::-1]  # Inverte a linha
 
         j = 0
         k = 0
-
+        # Para cada elemento da linha
         while j < gridSize:
             if line[j] != 0:
-                if j < (gridSize - 1) and line[j] == line[j + 1]:
+                if j < (gridSize - 1) and line[j] == line[j + 1]:  # Se o elemento atual for igual ao próximo
                     new_value = line[j] + 1
                     j += 1
                 else:
@@ -43,10 +43,16 @@ def merge_and_shift(matrix, reverse):
                 k += 1
             j += 1
 
-    if reverse:
+    if reverse:  # Se a linha ou coluna foi revertida, inverte novamente
         new_matrix = new_matrix[:, ::-1]
 
     return add_random_num(new_matrix)
+
+'''
+O método transpose() gira o tabuleiro em 90 graus
+A função merge_and_shift() pode ser usada para mover para as 4 direções
+Ao colocar o parâmetro reverse=True, a função move_and_shift() irá inverter a linha ou coluna
+'''
 
 @njit(fastmath=True)
 def move_up(matrix):
