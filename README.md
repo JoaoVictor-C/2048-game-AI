@@ -1,62 +1,52 @@
-# 2048-game-AI
+# 2048 Game AI
 
-## Variação do algoritmo Monte Carlo Tree Search jogando 2048
+This project implements a variation of the Monte Carlo Tree Search algorithm to play the game 2048.
 
-### Descrição do problema
+## Problem Description
 
-2048 é um jogo de tabuleiro em que o jogador deve mover as peças para que elas se somem e formem o número 
-2048 ou maior. O tabuleiro é uma matriz 4x4, e a cada jogada uma nova peça é adicionada ao tabuleiro, com valor 2 ou 4. O jogador pode mover as peças para cima, baixo, esquerda ou direita, e todas as peças se movem na mesma direção até que encontrem outra peça ou a borda do tabuleiro. Quando duas peças com o mesmo valor se encontram, elas se somam e formam uma peça com o dobro do valor. O jogo termina quando o jogador consegue formar uma peça com o valor 2048, ou quando não há mais movimentos possíveis.
+2048 is a board game where the player must combine tiles to form the number 2048 or higher. The board is a 4x4 matrix, and with each move, a new tile with a value of 2 or 4 is added. The player can move tiles in four directions: up, down, left, or right. Tiles move in the chosen direction until they encounter another tile or the edge of the board. When two tiles with the same value collide, they merge into one tile with double the value. The game ends when the player creates a tile with the value 2048 or when there are no more possible moves.
 
-### Descrição da solução
+## Solution Description
 
-Na variação implementada do algoritmo MCTS buscamos por um "Melhor movimento", ou seja, queremos de alguma forma descobrir qual é o melhor movimento para a situação do tabuleiro atual. O método que utilizei foi buscar por centenas ou milhares de jogos totalmente aleatórios o 'Evaluation', nesse caso a pontuação do tabuleiro.
+In this variation of the Monte Carlo Tree Search algorithm, the goal is to find the best move for the current board situation. The approach involves simulating hundreds or thousands of random games to evaluate the board score. The implementation considers four sets of games based on the first move direction: left, right, up, and down. After simulating the games, the average final score is calculated for each set, and the move with the highest average score is considered the best move. The simulation also looks ahead a specified number of moves (depth) to evaluate potential future states.
 
-Simulamos X jogos divididos em 4 partes:
-1. Jogos que o primeiro movimento é a esquerda
-2. Jogos que o primeiro movimento é a direita
-3. Jogos que o primeiro movimento é para cima
-4. Jogos que o primeiro movimento é para baixo
+## Results
 
-Após simular X jogos tiramos a média da pontuação final de cada, sendo a maior média o possível melhor movimento.
+After simulating 100 games of 4x4, the following results were obtained:
 
-Em cada simulação vemos Y (Depth) movimentos a frente, ou seja, se Y = 2, vemos o tabuleiro atual e os próximos 2 movimentos, e assim por diante.
-
-### Resultados
-
-Após simular 20 jogos 4x4, obtivemos os resultados:
 - 2048: 100%
-- 4096: 35%
+- 4096: 34%
+- 8.192: 1%
 
-### Como executar
+## How to Run
 
-Para executar o programa basta rodar o comando:
-```
+To execute the program, run the following command:
+
 python3 Algorithm.py
-```
 
-### Otimizações
+markdown
+Copy code
 
-Para otimizar o algoritmo, utilizamos a biblioteca Numba, que compila o código Python para código de máquina, e assim, aumenta a velocidade de execução do programa.
+## Optimizations
 
-Além de vários outros métodos de otimização, como tornar as váriaveis de iteração (depth e max_iter) dinâmicas com o 
-decorrer do jogo.
+To optimize the algorithm, the project utilizes the Numba library, which compiles Python code into machine code for faster execution. Additionally, several other optimization techniques are employed, such as dynamically adjusting iteration variables based on game progress.
 
-### Dependências
+## Dependencies
 
 - Python 3.6
 - Numpy
 - Numba
 
-### Referências
+## References
 
 - [2048](https://en.wikipedia.org/wiki/2048_(video_game))
 - [Monte Carlo Tree Search](https://en.wikipedia.org/wiki/Monte_Carlo_tree_search)
-- [Numba](https://numba.pydata.org/)
-- [2048 Game](https://2048.org/)
+- [Numba](http://numba.pydata.org/)
 
-### Observações
+## Notes
 
-- O método de pontuação utilizado não foi o mesmo do site 2048.org, por exemplo, nesse programa utilizei apenas as somas de todos os valores dos tiles.
+The scoring method used in this implementation differs from that of the website 2048.org. Only the sum of all tile values is considered in this program.
 
-### Autor
-[João Victor](https://github.com/JoaoVictor-C)
+## Author
+
+João Victor
